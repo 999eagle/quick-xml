@@ -34,7 +34,7 @@ name = "bench"
 harness = false
 
 [features]
-default = ["async"]
+default = []
 ## Enables support of non-UTF-8 encoded documents. Encoding will be inferred from
 ## the XML declaration if it will be found, otherwise UTF-8 is assumed.
 ##
