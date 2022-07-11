@@ -35,8 +35,7 @@
 //!                 </tag2>
 //!             </tag1>"#;
 //!
-//! let mut reader = Reader::from_str(xml);
-//! reader.trim_text(true);
+//! let mut reader = Reader::builder().trim_text(true).into_str_reader(xml);
 //!
 //! let mut count = 0;
 //! let mut txt = Vec::new();
@@ -81,8 +80,7 @@
 //! use std::iter;
 //!
 //! let xml = r#"<this_tag k1="v1" k2="v2"><child>text</child></this_tag>"#;
-//! let mut reader = Reader::from_str(xml);
-//! reader.trim_text(true);
+//! let mut reader = Reader::builder().trim_text(true).into_str_reader(xml);
 //! let mut writer = Writer::new(Cursor::new(Vec::new()));
 //! let mut buf = Vec::new();
 //! loop {
@@ -156,5 +154,7 @@ mod writer;
 #[cfg(feature = "serialize")]
 pub use crate::errors::serialize::DeError;
 pub use crate::errors::{Error, Result};
-pub use crate::reader::{Decoder, Reader};
+pub use crate::reader::{
+    Decoder, DefaultParser, NamespacedParser, Parser, ParserBuilder, Reader, ReaderBuilder,
+};
 pub use crate::writer::{ElementWriter, Writer};

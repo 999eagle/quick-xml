@@ -362,11 +362,11 @@ fn test(input: &str, output: &str, trim: bool) {
 
 #[track_caller]
 fn test_bytes(input: &[u8], output: &[u8], trim: bool) {
-    let mut reader = Reader::from_reader(input);
-    reader
+    let mut reader = Reader::builder()
         .trim_text(trim)
         .check_comments(true)
-        .expand_empty_elements(false);
+        .expand_empty_elements(false)
+        .into_reader_namespaced(input);
 
     let mut spec_lines = SpecIter(output).enumerate();
     let mut buf = Vec::new();

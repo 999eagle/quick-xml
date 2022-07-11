@@ -17,8 +17,7 @@ use std::io::Write;
 /// use std::io::Cursor;
 ///
 /// let xml = r#"<this_tag k1="v1" k2="v2"><child>text</child></this_tag>"#;
-/// let mut reader = Reader::from_str(xml);
-/// reader.trim_text(true);
+/// let mut reader = Reader::builder().trim_text(true).into_str_reader(xml);
 /// let mut writer = Writer::new(Cursor::new(Vec::new()));
 /// let mut buf = Vec::new();
 /// loop {

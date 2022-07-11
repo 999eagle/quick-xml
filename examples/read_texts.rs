@@ -6,8 +6,7 @@ fn main() {
     let xml = "<tag1>text1</tag1><tag1>text2</tag1>\
                <tag1>text3</tag1><tag1><tag2>text4</tag2></tag1>";
 
-    let mut reader = Reader::from_str(xml);
-    reader.trim_text(true);
+    let mut reader = Reader::builder().trim_text(true).into_str_reader(xml);
 
     let mut txt = Vec::new();
     let mut buf = Vec::new();

@@ -47,6 +47,7 @@ use crate::escape::{do_unescape, escape, partial_escape};
 use crate::name::{LocalName, QName};
 use crate::reader::{Decoder, Reader};
 use crate::utils::write_cow_string;
+use crate::Parser;
 use attributes::{Attribute, Attributes};
 
 #[cfg(feature = "serialize")]
@@ -754,7 +755,7 @@ impl<'a> BytesText<'a> {
     /// it might be wiser to manually use
     /// 1. BytesText::unescaped()
     /// 2. Reader::decode(...)
-    pub fn unescape_and_decode<B>(&self, reader: &Reader<B>) -> Result<String> {
+    pub fn unescape_and_decode<B, P: Parser>(&self, reader: &Reader<B, P>) -> Result<String> {
         self.do_unescape_and_decode_with_custom_entities(reader, None)
     }
 
@@ -768,17 +769,17 @@ impl<'a> BytesText<'a> {
     /// # Pre-condition
     ///
     /// The keys and values of `custom_entities`, if any, must be valid UTF-8.
-    pub fn unescape_and_decode_with_custom_entities<B>(
+    pub fn unescape_and_decode_with_custom_entities<B, P: Parser>(
         &self,
-        reader: &Reader<B>,
+        reader: &Reader<B, P>,
         custom_entities: &HashMap<Vec<u8>, Vec<u8>>,
     ) -> Result<String> {
         self.do_unescape_and_decode_with_custom_entities(reader, Some(custom_entities))
     }
 
-    fn do_unescape_and_decode_with_custom_entities<B>(
+    fn do_unescape_and_decode_with_custom_entities<B, P: Parser>(
         &self,
-        reader: &Reader<B>,
+        reader: &Reader<B, P>,
         custom_entities: Option<&HashMap<Vec<u8>, Vec<u8>>>,
     ) -> Result<String> {
         let decoded = reader.decoder().decode(&*self)?;

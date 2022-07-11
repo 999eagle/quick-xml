@@ -57,78 +57,89 @@ macro_rules! next_eq {
 
 #[test]
 fn test_start() {
-    let mut r = Reader::from_str("<a>");
-    r.trim_text(true);
+    let mut r = Reader::builder().trim_text(true).into_str_reader("<a>");
     next_eq!(r, Start, b"a");
 }
 
 #[test]
 fn test_start_end() {
-    let mut r = Reader::from_str("<a></a>");
-    r.trim_text(true);
+    let mut r = Reader::builder().trim_text(true).into_str_reader("<a></a>");
     next_eq!(r, Start, b"a", End, b"a");
 }
 
 #[test]
 fn test_start_end_with_ws() {
-    let mut r = Reader::from_str("<a></a >");
-    r.trim_text(true);
+    let mut r = Reader::builder()
+        .trim_text(true)
+        .into_str_reader("<a></a >");
     next_eq!(r, Start, b"a", End, b"a");
 }
 
 #[test]
 fn test_start_end_attr() {
-    let mut r = Reader::from_str("<a b=\"test\"></a>");
-    r.trim_text(true);
+    let mut r = Reader::builder()
+        .trim_text(true)
+        .into_str_reader("<a b=\"test\"></a>");
     next_eq!(r, Start, b"a", End, b"a");
 }
 
 #[test]
 fn test_empty() {
-    let mut r = Reader::from_str("<a />");
-    r.trim_text(true).expand_empty_elements(false);
+    let mut r = Reader::builder()
+        .trim_text(true)
+        .expand_empty_elements(false)
+        .into_str_reader("<a />");
     next_eq!(r, Empty, b"a");
 }
 
 #[test]
 fn test_empty_can_be_expanded() {
-    let mut r = Reader::from_str("<a />");
-    r.trim_text(true).expand_empty_elements(true);
+    let mut r = Reader::builder()
+        .trim_text(true)
+        .expand_empty_elements(true)
+        .into_str_reader("<a />");
     next_eq!(r, Start, b"a", End, b"a");
 }
 
 #[test]
 fn test_empty_attr() {
-    let mut r = Reader::from_str("<a b=\"test\" />");
-    r.trim_text(true).expand_empty_elements(false);
+    let mut r = Reader::builder()
+        .trim_text(true)
+        .expand_empty_elements(false)
+        .into_str_reader("<a b=\"test\" />");
     next_eq!(r, Empty, b"a");
 }
 
 #[test]
 fn test_start_end_comment() {
-    let mut r = Reader::from_str("<b><a b=\"test\" c=\"test\"/> <a  /><!--t--></b>");
-    r.trim_text(true).expand_empty_elements(false);
+    let mut r = Reader::builder()
+        .trim_text(true)
+        .expand_empty_elements(false)
+        .into_str_reader("<b><a b=\"test\" c=\"test\"/> <a  /><!--t--></b>");
     next_eq!(r, Start, b"b", Empty, b"a", Empty, b"a", Comment, b"t", End, b"b");
 }
 
 #[test]
 fn test_start_txt_end() {
-    let mut r = Reader::from_str("<a>test</a>");
-    r.trim_text(true);
+    let mut r = Reader::builder()
+        .trim_text(true)
+        .into_str_reader("<a>test</a>");
     next_eq!(r, Start, b"a", Text, b"test", End, b"a");
 }
 
 #[test]
 fn test_comment() {
-    let mut r = Reader::from_str("<!--test-->");
-    r.trim_text(true);
+    let mut r = Reader::builder()
+        .trim_text(true)
+        .into_str_reader("<!--test-->");
     next_eq!(r, Comment, b"test");
 }
 
 #[test]
 fn test_xml_decl() {
-    let mut r = Reader::from_str("<?xml version=\"1.0\" encoding='utf-8'?>");
-    r.trim_text(true);
+    let mut r = Reader::builder()
+        .trim_text(true)
+        .into_str_reader("<?xml version=\"1.0\" encoding='utf-8'?>");
     let mut buf = Vec::new();
     match r.read_event_into(&mut buf).unwrap() {
         Decl(ref e) => {
@@ -163,48 +174,50 @@ fn test_xml_decl() {
 #[test]
 fn test_trim_test() {
     let txt = "<a><b>  </b></a>";
-    let mut r = Reader::from_str(txt);
-    r.trim_text(true);
+    let mut r = Reader::builder().trim_text(true).into_str_reader(txt);
     next_eq!(r, Start, b"a", Start, b"b", End, b"b", End, b"a");
 
-    let mut r = Reader::from_str(txt);
-    r.trim_text(false);
+    let mut r = Reader::builder().trim_text(false).into_str_reader(txt);
     next_eq!(r, Start, b"a", Start, b"b", Text, b"  ", End, b"b", End, b"a");
 }
 
 #[test]
 fn test_cdata() {
-    let mut r = Reader::from_str("<![CDATA[test]]>");
-    r.trim_text(true);
+    let mut r = Reader::builder()
+        .trim_text(true)
+        .into_str_reader("<![CDATA[test]]>");
     next_eq!(r, CData, b"test");
 }
 
 #[test]
 fn test_cdata_open_close() {
-    let mut r = Reader::from_str("<![CDATA[test <> test]]>");
-    r.trim_text(true);
+    let mut r = Reader::builder()
+        .trim_text(true)
+        .into_str_reader("<![CDATA[test <> test]]>");
     next_eq!(r, CData, b"test <> test");
 }
 
 #[test]
 fn test_start_attr() {
-    let mut r = Reader::from_str("<a b=\"c\">");
-    r.trim_text(true);
+    let mut r = Reader::builder()
+        .trim_text(true)
+        .into_str_reader("<a b=\"c\">");
     next_eq!(r, Start, b"a");
 }
 
 #[test]
 fn test_nested() {
-    let mut r = Reader::from_str("<a><b>test</b><c/></a>");
-    r.trim_text(true).expand_empty_elements(false);
+    let mut r = Reader::builder()
+        .trim_text(true)
+        .expand_empty_elements(false)
+        .into_str_reader("<a><b>test</b><c/></a>");
     next_eq!(r, Start, b"a", Start, b"b", Text, b"test", End, b"b", Empty, b"c", End, b"a");
 }
 
 #[test]
 fn test_writer() -> Result<()> {
     let txt = include_str!("../tests/documents/test_writer.xml").trim();
-    let mut reader = Reader::from_str(txt);
-    reader.trim_text(true);
+    let mut reader = Reader::builder().trim_text(true).into_str_reader(txt);
     let mut writer = Writer::new(Cursor::new(Vec::new()));
     let mut buf = Vec::new();
     loop {
@@ -222,8 +235,7 @@ fn test_writer() -> Result<()> {
 #[test]
 fn test_writer_borrow() -> Result<()> {
     let txt = include_str!("../tests/documents/test_writer.xml").trim();
-    let mut reader = Reader::from_str(txt);
-    reader.trim_text(true);
+    let mut reader = Reader::builder().trim_text(true).into_str_reader(txt);
     let mut writer = Writer::new(Cursor::new(Vec::new()));
     let mut buf = Vec::new();
     loop {
@@ -245,8 +257,7 @@ fn test_writer_indent() -> Result<()> {
     // writer use.
     let normalized_txt = txt.replace("\r\n", "\n");
     let txt = normalized_txt.as_str();
-    let mut reader = Reader::from_str(txt);
-    reader.trim_text(true);
+    let mut reader = Reader::builder().trim_text(true).into_str_reader(txt);
     let mut writer = Writer::new_with_indent(Cursor::new(Vec::new()), b' ', 4);
     let mut buf = Vec::new();
     loop {
@@ -271,8 +282,7 @@ fn test_writer_indent() -> Result<()> {
 #[test]
 fn test_writer_indent_cdata() -> Result<()> {
     let txt = include_str!("../tests/documents/test_writer_indent_cdata.xml");
-    let mut reader = Reader::from_str(txt);
-    reader.trim_text(true);
+    let mut reader = Reader::builder().trim_text(true).into_str_reader(txt);
     let mut writer = Writer::new_with_indent(Cursor::new(Vec::new()), b' ', 4);
     let mut buf = Vec::new();
     loop {
@@ -297,8 +307,9 @@ fn test_writer_indent_cdata() -> Result<()> {
 fn test_write_empty_element_attrs() -> Result<()> {
     let str_from = r#"<source attr="val"/>"#;
     let expected = r#"<source attr="val"/>"#;
-    let mut reader = Reader::from_str(str_from);
-    reader.expand_empty_elements(false);
+    let mut reader = Reader::builder()
+        .expand_empty_elements(false)
+        .into_str_reader(str_from);
     let mut writer = Writer::new(Cursor::new(Vec::new()));
     let mut buf = Vec::new();
     loop {
@@ -319,8 +330,7 @@ fn test_write_attrs() -> Result<()> {
 
     let str_from = r#"<source attr="val"></source>"#;
     let expected = r#"<copy attr="val" a="b" c="d" x="y&quot;z"></copy>"#;
-    let mut reader = Reader::from_str(str_from);
-    reader.trim_text(true);
+    let mut reader = Reader::builder().trim_text(true).into_str_reader(str_from);
     let mut writer = Writer::new(Cursor::new(Vec::new()));
     let mut buf = Vec::new();
     loop {
@@ -426,8 +436,10 @@ fn test_new_xml_decl_empty() {
 
 #[test]
 fn test_buf_position_err_end_element() {
-    let mut r = Reader::from_str("</a>");
-    r.trim_text(true).check_end_names(true);
+    let mut r = Reader::builder()
+        .trim_text(true)
+        .check_end_names(true)
+        .into_str_reader("</a>");
 
     let mut buf = Vec::new();
     match r.read_event_into(&mut buf) {
@@ -443,8 +455,10 @@ fn test_buf_position_err_end_element() {
 
 #[test]
 fn test_buf_position_err_comment() {
-    let mut r = Reader::from_str("<a><!--b>");
-    r.trim_text(true).check_end_names(true);
+    let mut r = Reader::builder()
+        .trim_text(true)
+        .check_end_names(true)
+        .into_str_reader("<a><!--b>");
 
     next_eq!(r, Start, b"a");
     assert_eq!(r.buffer_position(), 3);
@@ -465,8 +479,10 @@ fn test_buf_position_err_comment() {
 
 #[test]
 fn test_buf_position_err_comment_2_buf() {
-    let mut r = Reader::from_str("<a><!--b>");
-    r.trim_text(true).check_end_names(true);
+    let mut r = Reader::builder()
+        .trim_text(true)
+        .check_end_names(true)
+        .into_str_reader("<a><!--b>");
 
     let mut buf = Vec::new();
     let _ = r.read_event_into(&mut buf).unwrap();
@@ -488,8 +504,10 @@ fn test_buf_position_err_comment_2_buf() {
 
 #[test]
 fn test_buf_position_err_comment_trim_text() {
-    let mut r = Reader::from_str("<a>\r\n <!--b>");
-    r.trim_text(true).check_end_names(true);
+    let mut r = Reader::builder()
+        .trim_text(true)
+        .check_end_names(true)
+        .into_str_reader("<a>\r\n <!--b>");
 
     next_eq!(r, Start, b"a");
     assert_eq!(r.buffer_position(), 3);
@@ -510,8 +528,9 @@ fn test_buf_position_err_comment_trim_text() {
 
 #[test]
 fn test_escaped_content() {
-    let mut r = Reader::from_str("<a>&lt;test&gt;</a>");
-    r.trim_text(true);
+    let mut r = Reader::builder()
+        .trim_text(true)
+        .into_str_reader("<a>&lt;test&gt;</a>");
     next_eq!(r, Start, b"a");
     let mut buf = Vec::new();
     match r.read_event_into(&mut buf) {
@@ -557,8 +576,10 @@ fn test_read_write_roundtrip_results_in_identity() -> Result<()> {
             </section>
     "#;
 
-    let mut reader = Reader::from_str(input);
-    reader.trim_text(false).expand_empty_elements(false);
+    let mut reader = Reader::builder()
+        .trim_text(false)
+        .expand_empty_elements(false)
+        .into_str_reader(input);
     let mut writer = Writer::new(Cursor::new(Vec::new()));
     let mut buf = Vec::new();
     loop {
@@ -584,8 +605,10 @@ fn test_read_write_roundtrip() -> Result<()> {
             </section>
     "#;
 
-    let mut reader = Reader::from_str(input);
-    reader.trim_text(false).expand_empty_elements(false);
+    let mut reader = Reader::builder()
+        .trim_text(false)
+        .expand_empty_elements(false)
+        .into_str_reader(input);
     let mut writer = Writer::new(Cursor::new(Vec::new()));
     let mut buf = Vec::new();
     loop {
@@ -611,8 +634,10 @@ fn test_read_write_roundtrip_escape() -> Result<()> {
             </section>
     "#;
 
-    let mut reader = Reader::from_str(input);
-    reader.trim_text(false).expand_empty_elements(false);
+    let mut reader = Reader::builder()
+        .trim_text(false)
+        .expand_empty_elements(false)
+        .into_str_reader(input);
     let mut writer = Writer::new(Cursor::new(Vec::new()));
     let mut buf = Vec::new();
     loop {
@@ -644,8 +669,10 @@ fn test_read_write_roundtrip_escape_text() -> Result<()> {
             </section>
     "#;
 
-    let mut reader = Reader::from_str(input);
-    reader.trim_text(false).expand_empty_elements(false);
+    let mut reader = Reader::builder()
+        .trim_text(false)
+        .expand_empty_elements(false)
+        .into_str_reader(input);
     let mut writer = Writer::new(Cursor::new(Vec::new()));
     let mut buf = Vec::new();
     loop {
@@ -668,8 +695,9 @@ fn test_read_write_roundtrip_escape_text() -> Result<()> {
 
 #[test]
 fn test_closing_bracket_in_single_quote_attr() {
-    let mut r = Reader::from_str("<a attr='>' check='2'></a>");
-    r.trim_text(true);
+    let mut r = Reader::builder()
+        .trim_text(false)
+        .into_str_reader("<a attr='>' check='2'></a>");
     let mut buf = Vec::new();
     match r.read_event_into(&mut buf) {
         Ok(Start(e)) => {
@@ -697,8 +725,9 @@ fn test_closing_bracket_in_single_quote_attr() {
 
 #[test]
 fn test_closing_bracket_in_double_quote_attr() {
-    let mut r = Reader::from_str(r#"<a attr=">" check="2"></a>"#);
-    r.trim_text(true);
+    let mut r = Reader::builder()
+        .trim_text(true)
+        .into_str_reader(r#"<a attr=">" check="2"></a>"#);
     let mut buf = Vec::new();
     match r.read_event_into(&mut buf) {
         Ok(Start(e)) => {
@@ -726,8 +755,9 @@ fn test_closing_bracket_in_double_quote_attr() {
 
 #[test]
 fn test_closing_bracket_in_double_quote_mixed() {
-    let mut r = Reader::from_str(r#"<a attr="'>'" check="'2'"></a>"#);
-    r.trim_text(true);
+    let mut r = Reader::builder()
+        .trim_text(true)
+        .into_str_reader(r#"<a attr="'>'" check="'2'"></a>"#);
     let mut buf = Vec::new();
     match r.read_event_into(&mut buf) {
         Ok(Start(e)) => {
@@ -755,8 +785,9 @@ fn test_closing_bracket_in_double_quote_mixed() {
 
 #[test]
 fn test_closing_bracket_in_single_quote_mixed() {
-    let mut r = Reader::from_str(r#"<a attr='">"' check='"2"'></a>"#);
-    r.trim_text(true);
+    let mut r = Reader::builder()
+        .trim_text(true)
+        .into_str_reader(r#"<a attr='">"' check='"2"'></a>"#);
     let mut buf = Vec::new();
     match r.read_event_into(&mut buf) {
         Ok(Start(e)) => {
@@ -791,8 +822,7 @@ mod decode_with_bom_removal {
     fn removes_utf8_bom() {
         let input: &str = std::str::from_utf8(b"\xEF\xBB\xBF<?xml version=\"1.0\"?>").unwrap();
 
-        let mut reader = Reader::from_str(&input);
-        reader.trim_text(true);
+        let mut reader = Reader::builder().trim_text(true).into_str_reader(&input);
 
         let mut txt = Vec::new();
         let mut buf = Vec::new();
@@ -817,8 +847,10 @@ mod decode_with_bom_removal {
     #[cfg(feature = "encoding")]
     #[ignore = "Non-ASCII compatible encodings not properly supported yet. See https://github.com/tafia/quick-xml/issues/158"]
     fn removes_utf16be_bom() {
-        let mut reader = Reader::from_file("./tests/documents/utf16be.xml").unwrap();
-        reader.trim_text(true);
+        let mut reader = Reader::builder()
+            .trim_text(true)
+            .into_file_reader("./tests/documents/utf16be.xml")
+            .unwrap();
 
         let mut txt = Vec::new();
         let mut buf = Vec::new();
@@ -838,8 +870,10 @@ mod decode_with_bom_removal {
     #[test]
     #[cfg(feature = "encoding")]
     fn removes_utf16le_bom() {
-        let mut reader = Reader::from_file("./tests/documents/utf16le.xml").unwrap();
-        reader.trim_text(true);
+        let mut reader = Reader::builder()
+            .trim_text(true)
+            .into_file_reader("./tests/documents/utf16le.xml")
+            .unwrap();
 
         let mut txt = Vec::new();
         let mut buf = Vec::new();
@@ -861,8 +895,7 @@ mod decode_with_bom_removal {
     fn does_nothing_if_no_bom_exists() {
         let input: &str = std::str::from_utf8(b"<?xml version=\"1.0\"?>").unwrap();
 
-        let mut reader = Reader::from_str(&input);
-        reader.trim_text(true);
+        let mut reader = Reader::builder().trim_text(true).into_str_reader(&input);
 
         let mut txt = Vec::new();
         let mut buf = Vec::new();

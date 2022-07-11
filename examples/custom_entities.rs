@@ -23,8 +23,7 @@ const DATA: &str = r#"
 "#;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut reader = Reader::from_str(DATA);
-    reader.trim_text(true);
+    let mut reader = Reader::builder().trim_text(true).into_str_reader(DATA);
 
     let mut buf = Vec::new();
     let mut custom_entities = HashMap::new();

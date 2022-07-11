@@ -29,8 +29,10 @@ fn read_event(c: &mut Criterion) {
     let mut group = c.benchmark_group("read_event");
     group.bench_function("trim_text = false", |b| {
         b.iter(|| {
-            let mut r = Reader::from_reader(SAMPLE);
-            r.check_end_names(false).check_comments(false);
+            let mut r = Reader::builder()
+                .check_end_names(false)
+                .check_comments(false)
+                .into_reader(SAMPLE);
             let mut count = criterion::black_box(0);
             let mut buf = Vec::new();
             loop {
@@ -50,10 +52,11 @@ fn read_event(c: &mut Criterion) {
 
     group.bench_function("trim_text = true", |b| {
         b.iter(|| {
-            let mut r = Reader::from_reader(SAMPLE);
-            r.check_end_names(false)
+            let mut r = Reader::builder()
+                .check_end_names(false)
                 .check_comments(false)
-                .trim_text(true);
+                .trim_text(true)
+                .into_reader(SAMPLE);
             let mut count = criterion::black_box(0);
             let mut buf = Vec::new();
             loop {
@@ -79,8 +82,10 @@ fn read_namespaced_event(c: &mut Criterion) {
     let mut group = c.benchmark_group("read_namespaced_event");
     group.bench_function("trim_text = false", |b| {
         b.iter(|| {
-            let mut r = Reader::from_reader(SAMPLE);
-            r.check_end_names(false).check_comments(false);
+            let mut r = Reader::builder()
+                .check_end_names(false)
+                .check_comments(false)
+                .into_reader_namespaced(SAMPLE);
             let mut count = criterion::black_box(0);
             let mut buf = Vec::new();
             let mut ns_buf = Vec::new();
@@ -101,10 +106,11 @@ fn read_namespaced_event(c: &mut Criterion) {
 
     group.bench_function("trim_text = true", |b| {
         b.iter(|| {
-            let mut r = Reader::from_reader(SAMPLE);
-            r.check_end_names(false)
+            let mut r = Reader::builder()
+                .check_end_names(false)
                 .check_comments(false)
-                .trim_text(true);
+                .trim_text(true)
+                .into_reader_namespaced(SAMPLE);
             let mut count = criterion::black_box(0);
             let mut buf = Vec::new();
             let mut ns_buf = Vec::new();
@@ -132,8 +138,10 @@ fn bytes_text_unescaped(c: &mut Criterion) {
     group.bench_function("trim_text = false", |b| {
         b.iter(|| {
             let mut buf = Vec::new();
-            let mut r = Reader::from_reader(SAMPLE);
-            r.check_end_names(false).check_comments(false);
+            let mut r = Reader::builder()
+                .check_end_names(false)
+                .check_comments(false)
+                .into_reader(SAMPLE);
             let mut count = criterion::black_box(0);
             let mut nbtxt = criterion::black_box(0);
             loop {
@@ -168,10 +176,11 @@ fn bytes_text_unescaped(c: &mut Criterion) {
     group.bench_function("trim_text = true", |b| {
         b.iter(|| {
             let mut buf = Vec::new();
-            let mut r = Reader::from_reader(SAMPLE);
-            r.check_end_names(false)
+            let mut r = Reader::builder()
+                .check_end_names(false)
                 .check_comments(false)
-                .trim_text(true);
+                .trim_text(true)
+                .into_reader(SAMPLE);
             let mut count = criterion::black_box(0);
             let mut nbtxt = criterion::black_box(0);
             loop {
@@ -212,9 +221,11 @@ fn one_event(c: &mut Criterion) {
         let src = "Hello world!".repeat(512 / 12).into_bytes();
         let mut buf = Vec::with_capacity(1024);
         b.iter(|| {
-            let mut r = Reader::from_reader(src.as_ref());
+            let mut r = Reader::builder()
+                .check_end_names(false)
+                .check_comments(false)
+                .into_reader(src.as_ref());
             let mut nbtxt = criterion::black_box(0);
-            r.check_end_names(false).check_comments(false);
             match r.read_event_into(&mut buf) {
                 Ok(Event::StartText(e)) => nbtxt += e.len(),
                 something_else => panic!("Did not expect {:?}", something_else),
@@ -230,11 +241,12 @@ fn one_event(c: &mut Criterion) {
         let src = format!(r#"<hello target="{}">"#, "world".repeat(512 / 5)).into_bytes();
         let mut buf = Vec::with_capacity(1024);
         b.iter(|| {
-            let mut r = Reader::from_reader(src.as_ref());
-            let mut nbtxt = criterion::black_box(0);
-            r.check_end_names(false)
+            let mut r = Reader::builder()
+                .check_end_names(false)
                 .check_comments(false)
-                .trim_text(true);
+                .trim_text(true)
+                .into_reader(src.as_ref());
+            let mut nbtxt = criterion::black_box(0);
             match r.read_event_into(&mut buf) {
                 Ok(Event::Start(ref e)) => nbtxt += e.len(),
                 something_else => panic!("Did not expect {:?}", something_else),
@@ -250,11 +262,12 @@ fn one_event(c: &mut Criterion) {
         let src = format!(r#"<!-- hello "{}" -->"#, "world".repeat(512 / 5)).into_bytes();
         let mut buf = Vec::with_capacity(1024);
         b.iter(|| {
-            let mut r = Reader::from_reader(src.as_ref());
-            let mut nbtxt = criterion::black_box(0);
-            r.check_end_names(false)
+            let mut r = Reader::builder()
+                .check_end_names(false)
                 .check_comments(false)
-                .trim_text(true);
+                .trim_text(true)
+                .into_reader(src.as_ref());
+            let mut nbtxt = criterion::black_box(0);
             match r.read_event_into(&mut buf) {
                 Ok(Event::Comment(ref e)) => nbtxt += e.unescaped().unwrap().len(),
                 something_else => panic!("Did not expect {:?}", something_else),
@@ -270,11 +283,12 @@ fn one_event(c: &mut Criterion) {
         let src = format!(r#"<![CDATA[hello "{}"]]>"#, "world".repeat(512 / 5)).into_bytes();
         let mut buf = Vec::with_capacity(1024);
         b.iter(|| {
-            let mut r = Reader::from_reader(src.as_ref());
-            let mut nbtxt = criterion::black_box(0);
-            r.check_end_names(false)
+            let mut r = Reader::builder()
+                .check_end_names(false)
                 .check_comments(false)
-                .trim_text(true);
+                .trim_text(true)
+                .into_reader(src.as_ref());
+            let mut nbtxt = criterion::black_box(0);
             match r.read_event_into(&mut buf) {
                 Ok(Event::CData(ref e)) => nbtxt += e.len(),
                 something_else => panic!("Did not expect {:?}", something_else),
@@ -293,8 +307,10 @@ fn attributes(c: &mut Criterion) {
     let mut group = c.benchmark_group("attributes");
     group.bench_function("with_checks = true", |b| {
         b.iter(|| {
-            let mut r = Reader::from_reader(PLAYERS);
-            r.check_end_names(false).check_comments(false);
+            let mut r = Reader::builder()
+                .check_end_names(false)
+                .check_comments(false)
+                .into_reader(PLAYERS);
             let mut count = criterion::black_box(0);
             let mut buf = Vec::new();
             loop {
@@ -316,8 +332,10 @@ fn attributes(c: &mut Criterion) {
 
     group.bench_function("with_checks = false", |b| {
         b.iter(|| {
-            let mut r = Reader::from_reader(PLAYERS);
-            r.check_end_names(false).check_comments(false);
+            let mut r = Reader::builder()
+                .check_end_names(false)
+                .check_comments(false)
+                .into_reader(PLAYERS);
             let mut count = criterion::black_box(0);
             let mut buf = Vec::new();
             loop {
@@ -339,8 +357,10 @@ fn attributes(c: &mut Criterion) {
 
     group.bench_function("try_get_attribute", |b| {
         b.iter(|| {
-            let mut r = Reader::from_reader(PLAYERS);
-            r.check_end_names(false).check_comments(false);
+            let mut r = Reader::builder()
+                .check_end_names(false)
+                .check_comments(false)
+                .into_reader(PLAYERS);
             let mut count = criterion::black_box(0);
             let mut buf = Vec::new();
             loop {

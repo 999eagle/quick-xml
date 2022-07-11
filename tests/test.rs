@@ -1,4 +1,5 @@
 use quick_xml::name::QName;
+use quick_xml::ParserBuilder;
 use quick_xml::{events::attributes::Attribute, events::Event::*, Error, Reader};
 use std::{borrow::Cow, io::Cursor};
 
@@ -28,8 +29,10 @@ fn test_sample() {
 #[test]
 fn test_attributes_empty() {
     let src = b"<a att1='a' att2='b'/>";
-    let mut r = Reader::from_reader(src as &[u8]);
-    r.trim_text(true).expand_empty_elements(false);
+    let mut r = Reader::builder()
+        .trim_text(true)
+        .expand_empty_elements(false)
+        .into_reader(src as &[u8]);
     let mut buf = Vec::new();
     match r.read_event_into(&mut buf) {
         Ok(Empty(e)) => {
@@ -57,8 +60,10 @@ fn test_attributes_empty() {
 #[test]
 fn test_attribute_equal() {
     let src = b"<a att1=\"a=b\"/>";
-    let mut r = Reader::from_reader(src as &[u8]);
-    r.trim_text(true).expand_empty_elements(false);
+    let mut r = Reader::builder()
+        .trim_text(true)
+        .expand_empty_elements(false)
+        .into_reader(src as &[u8]);
     let mut buf = Vec::new();
     match r.read_event_into(&mut buf) {
         Ok(Empty(e)) => {
@@ -79,8 +84,10 @@ fn test_attribute_equal() {
 #[test]
 fn test_comment_starting_with_gt() {
     let src = b"<a /><!-->-->";
-    let mut r = Reader::from_reader(src as &[u8]);
-    r.trim_text(true).expand_empty_elements(false);
+    let mut r = Reader::builder()
+        .trim_text(true)
+        .expand_empty_elements(false)
+        .into_reader(src as &[u8]);
     let mut buf = Vec::new();
     loop {
         match r.read_event_into(&mut buf) {
@@ -98,8 +105,10 @@ fn test_comment_starting_with_gt() {
 #[cfg(feature = "encoding_rs")]
 fn test_koi8_r_encoding() {
     let src: &[u8] = include_bytes!("documents/opennews_all.rss");
-    let mut r = Reader::from_reader(src as &[u8]);
-    r.trim_text(true).expand_empty_elements(false);
+    let mut r = Reader::builder()
+        .trim_text(true)
+        .expand_empty_elements(false)
+        .into_reader(src as &[u8]);
     let mut buf = Vec::new();
     loop {
         match r.read_event_into(&mut buf) {
@@ -133,8 +142,7 @@ fn test_issue94() {
     let data = br#"<Run>
 <!B>
 </Run>"#;
-    let mut reader = Reader::from_reader(&data[..]);
-    reader.trim_text(true);
+    let mut reader = Reader::builder().trim_text(true).into_reader(&data[..]);
     let mut buf = vec![];
     loop {
         match reader.read_event_into(&mut buf) {
@@ -187,8 +195,10 @@ fn test_no_trim() {
 
 #[test]
 fn test_trim_end() {
-    let mut reader = Reader::from_str(" <tag> text </tag> ");
-    reader.trim_text_end(true);
+    let mut reader = Reader::from_str_builder(
+        " <tag> text </tag> ",
+        ParserBuilder::new().trim_text_end(true),
+    );
 
     assert!(matches!(reader.read_event().unwrap(), StartText(_)));
     assert!(matches!(reader.read_event().unwrap(), Start(_)));
@@ -198,8 +208,9 @@ fn test_trim_end() {
 
 #[test]
 fn test_trim() {
-    let mut reader = Reader::from_str(" <tag> text </tag> ");
-    reader.trim_text(true);
+    let mut reader = Reader::builder()
+        .trim_text(true)
+        .into_str_reader(" <tag> text </tag> ");
 
     assert!(matches!(reader.read_event().unwrap(), Start(_)));
     assert!(matches!(reader.read_event().unwrap(), Text(_)));
@@ -208,8 +219,8 @@ fn test_trim() {
 
 #[test]
 fn test_clone_reader() {
-    let mut reader = Reader::from_str("<tag>text</tag>");
-    reader.trim_text(true);
+    let mut reader =
+        Reader::from_str_builder("<tag>text</tag>", ParserBuilder::new().trim_text(true));
     let mut buf = Vec::new();
 
     assert!(matches!(
