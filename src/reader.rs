@@ -161,8 +161,8 @@ pub struct Reader<R, P> {
 
 impl Reader<(), ()> {
     /// Create a new builder for configuring this reader.
-    pub fn builder() -> ReaderBuilder {
-        ReaderBuilder::new()
+    pub fn builder() -> ReaderBuilder<DefaultParser> {
+        ReaderBuilder::<DefaultParser>::new()
     }
 }
 
@@ -189,10 +189,18 @@ impl<R> Reader<R, NamespacedParser> {
 }
 
 /// Builder methods
-impl<R, P> Reader<R, P> {
+impl<R, P: Parser> Reader<R, P> {
     /// Creates a `Reader` that reads from a given reader.
     pub fn from_reader_and_parser(reader: R, parser: P) -> Self {
         Self { reader, parser }
+    }
+
+    /// Creates a `Reader` that reads from a given reader.
+    pub fn from_reader_and_builder(reader: R, parser: ParserBuilder<P>) -> Self {
+        Self {
+            reader,
+            parser: parser.build(),
+        }
     }
 }
 
@@ -518,7 +526,7 @@ impl<R: BufRead> Reader<R, NamespacedParser> {
     ///                 <y:tag2><!--Test comment-->Test</y:tag2>
     ///                 <y:tag2>Test 2</y:tag2>
     ///             </x:tag1>"#;
-    /// let mut reader =  Reader::builder().trim_text(true).into_str_reader_namespaced(xml);
+    /// let mut reader =  Reader::builder().trim_text(true).with_namespace().into_str_reader(xml);
     /// let mut count = 0;
     /// let mut buf = Vec::new();
     /// let mut ns_buf = Vec::new();
@@ -598,6 +606,9 @@ impl<R: BufRead> Reader<R, NamespacedParser> {
             Err(e) => Err(e),
         }
     }
+}
+
+impl<R> Reader<R, NamespacedParser> {
     /// Resolves a potentially qualified **event name** into (namespace name, local name).
     ///
     /// *Qualified* attribute names have the form `prefix:local-name` where the`prefix` is defined
@@ -785,26 +796,33 @@ impl Reader<BufReader<File>, DefaultParser> {
 impl<'a> Reader<&'a [u8], DefaultParser> {
     /// Creates an XML reader from a string slice using a default parser configuration.
     pub fn from_str(s: &'a str) -> Self {
-        Self::from_str_builder(s, ParserBuilder::new())
-    }
-
-    /// Creates an XML reader from a string slice and a [`ParserBuilder`] for configuration.
-    pub fn from_str_builder(s: &'a str, builder: ParserBuilder) -> Self {
-        // Rust strings are guaranteed to be UTF-8, so lock the encoding
-        #[cfg(feature = "encoding")]
-        {
-            let mut reader = Self::from_reader_and_parser(s.as_bytes(), builder.into_parser());
-            reader.parser.set_encoding(EncodingRef::Explicit(UTF_8));
-            reader
-        }
-
-        #[cfg(not(feature = "encoding"))]
-        Self::from_reader_and_parser(s.as_bytes(), builder.into_parser())
+        Self::from_str_builder(s, ParserBuilder::<DefaultParser>::new())
     }
 
     /// Creates an XML reader from a slice of bytes a default parser configuration.
     pub fn from_bytes(s: &'a [u8]) -> Self {
-        Self::from_reader(s)
+        Self::from_bytes_builder(s, ParserBuilder::<DefaultParser>::new())
+    }
+}
+
+impl<'a, P: Parser> Reader<&'a [u8], P> {
+    /// Creates an XML reader from a string slice and a [`ParserBuilder`] for configuration.
+    pub fn from_str_builder(s: &'a str, builder: ParserBuilder<P>) -> Self {
+        #[allow(unused_mut)]
+        let mut reader = ReaderBuilder::from_parser(builder).into_str_reader(s);
+
+        // Rust strings are guaranteed to be UTF-8, so lock the encoding
+        #[cfg(feature = "encoding")]
+        {
+            reader.parser.set_encoding(EncodingRef::Explicit(UTF_8));
+        }
+
+        reader
+    }
+
+    /// Creates an XML reader from a slice of bytes a default parser configuration.
+    pub fn from_bytes_builder(s: &'a [u8], builder: ParserBuilder<P>) -> Self {
+        ReaderBuilder::from_parser(builder).into_reader(s)
     }
 }
 

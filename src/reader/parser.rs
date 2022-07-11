@@ -7,7 +7,7 @@ use encoding_rs::{Encoding, UTF_16BE, UTF_16LE, UTF_8};
 use crate::{
     events::{BytesCData, BytesDecl, BytesEnd, BytesStart, BytesText, Event},
     name::{LocalName, NamespaceResolver, QName, ResolveResult},
-    reader::{is_whitespace, BangType, TagState},
+    reader::{builder::InnerParserBuilder, is_whitespace, BangType, TagState},
     Error, Result,
 };
 
@@ -28,6 +28,8 @@ mod sealed {
 /// [`NamespacedParser`] to be `pub` to be able to name concrete implementations of
 /// [`Reader`](super::Reader) to be named in external crates.
 pub trait Parser: sealed::Sealed {
+    /// Build a new parser from the given builder.
+    fn from_builder(builder: InnerParserBuilder) -> Self;
     /// Get the current buffer position.
     fn buf_position(&self) -> usize;
     /// Get a mutable reference to the current buffer position.
@@ -208,21 +210,21 @@ pub trait Parser: sealed::Sealed {
 #[derive(Clone)]
 pub struct DefaultParser {
     /// current buffer position, useful for debugging errors
-    pub(super) buf_position: usize,
+    buf_position: usize,
     /// current state Open/Close
-    pub(super) tag_state: TagState,
+    tag_state: TagState,
     /// expand empty element into an opening and closing element
-    pub(super) expand_empty_elements: bool,
+    expand_empty_elements: bool,
     /// trims leading whitespace in Text events, skip the element if text is empty
-    pub(super) trim_text_start: bool,
+    trim_text_start: bool,
     /// trims trailing whitespace in Text events.
-    pub(super) trim_text_end: bool,
+    trim_text_end: bool,
     /// trims trailing whitespaces from markup names in closing tags `</a >`
-    pub(super) trim_markup_names_in_closing_tags: bool,
+    trim_markup_names_in_closing_tags: bool,
     /// check if End nodes match last Start node
-    pub(super) check_end_names: bool,
+    check_end_names: bool,
     /// check if comments contains `--` (false per default)
-    pub(super) check_comments: bool,
+    check_comments: bool,
     /// All currently Started elements which didn't have a matching
     /// End element yet.
     ///
@@ -240,14 +242,14 @@ pub struct DefaultParser {
     ///
     /// The `^` symbols shows which positions stored in the [`Self::opened_starts`]
     /// (0 and 4 in that case).
-    pub(super) opened_buffer: Vec<u8>,
+    opened_buffer: Vec<u8>,
     /// Opened name start indexes into [`Self::opened_buffer`]. See documentation
     /// for that field for details
-    pub(super) opened_starts: Vec<usize>,
+    opened_starts: Vec<usize>,
 
     #[cfg(feature = "encoding")]
     /// Reference to the encoding used to read an XML
-    pub(super) encoding: EncodingRef,
+    encoding: EncodingRef,
 }
 
 /// Namespaced parser implementing the [`Parser`] trait. Handles namespaced elements.
@@ -302,6 +304,25 @@ impl NamespacedParser {
 }
 
 impl Parser for DefaultParser {
+    fn from_builder(builder: InnerParserBuilder) -> Self {
+        Self {
+            opened_buffer: Vec::new(),
+            opened_starts: Vec::new(),
+            tag_state: TagState::Init,
+            buf_position: 0,
+
+            expand_empty_elements: builder.expand_empty_elements,
+            trim_text_start: builder.trim_text_start,
+            trim_text_end: builder.trim_text_end,
+            trim_markup_names_in_closing_tags: builder.trim_markup_names_in_closing_tags,
+            check_end_names: builder.check_end_names,
+            check_comments: builder.check_comments,
+
+            #[cfg(feature = "encoding")]
+            encoding: EncodingRef::Implicit(UTF_8),
+        }
+    }
+
     #[inline]
     fn buf_position(&self) -> usize {
         self.buf_position
@@ -400,6 +421,15 @@ impl Parser for NamespacedParser {
             fn encoding(&self) -> EncodingRef;
             #[cfg(feature = "encoding")]
             fn set_encoding(&mut self, encoding: EncodingRef);
+        }
+    }
+
+    fn from_builder(builder: InnerParserBuilder) -> Self {
+        let inner = DefaultParser::from_builder(builder);
+        Self {
+            inner,
+            ns_resolver: NamespaceResolver::default(),
+            pending_pop: false,
         }
     }
 }

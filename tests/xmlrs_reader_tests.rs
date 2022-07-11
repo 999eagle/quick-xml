@@ -366,7 +366,8 @@ fn test_bytes(input: &[u8], output: &[u8], trim: bool) {
         .trim_text(trim)
         .check_comments(true)
         .expand_empty_elements(false)
-        .into_reader_namespaced(input);
+        .with_namespace()
+        .into_reader(input);
 
     let mut spec_lines = SpecIter(output).enumerate();
     let mut buf = Vec::new();

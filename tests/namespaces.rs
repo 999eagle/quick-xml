@@ -10,7 +10,8 @@ use std::borrow::Cow;
 fn namespace() {
     let mut r = Reader::builder()
         .trim_text(true)
-        .into_str_reader_namespaced("<a xmlns:myns='www1'><myns:b>in namespace!</myns:b></a>");
+        .with_namespace()
+        .into_str_reader("<a xmlns:myns='www1'><myns:b>in namespace!</myns:b></a>");
 
     let mut buf = Vec::new();
     let mut ns_buf = Vec::new();
@@ -58,7 +59,8 @@ fn namespace() {
 fn default_namespace() {
     let mut r = Reader::builder()
         .trim_text(true)
-        .into_str_reader_namespaced(r#"<a ><b xmlns="www1"></b></a>"#);
+        .with_namespace()
+        .into_str_reader(r#"<a ><b xmlns="www1"></b></a>"#);
 
     let mut buf = Vec::new();
     let mut ns_buf = Vec::new();
@@ -101,7 +103,8 @@ fn default_namespace() {
 fn default_namespace_reset() {
     let mut r = Reader::builder()
         .trim_text(true)
-        .into_str_reader_namespaced(r#"<a xmlns="www1"><b xmlns=""></b></a>"#);
+        .with_namespace()
+        .into_str_reader(r#"<a xmlns="www1"><b xmlns=""></b></a>"#);
     let mut buf = Vec::new();
     let mut ns_buf = Vec::new();
 
@@ -148,7 +151,8 @@ fn attributes_empty_ns() {
     let mut r = Reader::builder()
         .trim_text(true)
         .expand_empty_elements(false)
-        .into_reader_namespaced(src as &[u8]);
+        .with_namespace()
+        .into_reader(src as &[u8]);
     let mut buf = Vec::new();
     let mut ns_buf = Vec::new();
 
@@ -191,7 +195,8 @@ fn attributes_empty_ns_expanded() {
     let mut r = Reader::builder()
         .trim_text(true)
         .expand_empty_elements(true)
-        .into_reader_namespaced(src as &[u8]);
+        .with_namespace()
+        .into_reader(src as &[u8]);
     let mut buf = Vec::new();
     let mut ns_buf = Vec::new();
     {
@@ -237,7 +242,8 @@ fn default_ns_shadowing_empty() {
     let mut r = Reader::builder()
         .trim_text(true)
         .expand_empty_elements(false)
-        .into_reader_namespaced(src as &[u8]);
+        .with_namespace()
+        .into_reader(src as &[u8]);
     let mut buf = Vec::new();
     let mut ns_buf = Vec::new();
 
@@ -298,7 +304,8 @@ fn default_ns_shadowing_expanded() {
     let mut r = Reader::builder()
         .trim_text(true)
         .expand_empty_elements(true)
-        .into_reader_namespaced(src as &[u8]);
+        .with_namespace()
+        .into_reader(src as &[u8]);
     let mut buf = Vec::new();
     let mut ns_buf = Vec::new();
 
@@ -372,9 +379,8 @@ fn reserved_name() {
     // Name "xmlns-something" is reserved according to spec, because started with "xml"
     let mut r = Reader::builder()
         .trim_text(true)
-        .into_str_reader_namespaced(
-            r#"<a xmlns-something="reserved attribute name" xmlns="www1"/>"#,
-        );
+        .with_namespace()
+        .into_str_reader(r#"<a xmlns-something="reserved attribute name" xmlns="www1"/>"#);
 
     let mut buf = Vec::new();
     let mut ns_buf = Vec::new();

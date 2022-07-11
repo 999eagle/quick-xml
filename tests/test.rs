@@ -1,5 +1,4 @@
 use quick_xml::name::QName;
-use quick_xml::ParserBuilder;
 use quick_xml::{events::attributes::Attribute, events::Event::*, Error, Reader};
 use std::{borrow::Cow, io::Cursor};
 
@@ -195,10 +194,9 @@ fn test_no_trim() {
 
 #[test]
 fn test_trim_end() {
-    let mut reader = Reader::from_str_builder(
-        " <tag> text </tag> ",
-        ParserBuilder::new().trim_text_end(true),
-    );
+    let mut reader = Reader::builder()
+        .trim_text_end(true)
+        .into_str_reader(" <tag> text </tag> ");
 
     assert!(matches!(reader.read_event().unwrap(), StartText(_)));
     assert!(matches!(reader.read_event().unwrap(), Start(_)));
@@ -219,8 +217,9 @@ fn test_trim() {
 
 #[test]
 fn test_clone_reader() {
-    let mut reader =
-        Reader::from_str_builder("<tag>text</tag>", ParserBuilder::new().trim_text(true));
+    let mut reader = Reader::builder()
+        .trim_text(true)
+        .into_str_reader("<tag>text</tag>");
     let mut buf = Vec::new();
 
     assert!(matches!(

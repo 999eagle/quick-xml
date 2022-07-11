@@ -85,7 +85,8 @@ fn read_namespaced_event(c: &mut Criterion) {
             let mut r = Reader::builder()
                 .check_end_names(false)
                 .check_comments(false)
-                .into_reader_namespaced(SAMPLE);
+                .with_namespace()
+                .into_reader(SAMPLE);
             let mut count = criterion::black_box(0);
             let mut buf = Vec::new();
             let mut ns_buf = Vec::new();
@@ -110,7 +111,8 @@ fn read_namespaced_event(c: &mut Criterion) {
                 .check_end_names(false)
                 .check_comments(false)
                 .trim_text(true)
-                .into_reader_namespaced(SAMPLE);
+                .with_namespace()
+                .into_reader(SAMPLE);
             let mut count = criterion::black_box(0);
             let mut buf = Vec::new();
             let mut ns_buf = Vec::new();
