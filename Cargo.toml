@@ -16,6 +16,7 @@ document-features = { version = "0.2", optional = true }
 encoding_rs = { version = "0.8", optional = true }
 serde = { version = "1.0", optional = true }
 memchr = "2.5"
+tokio = { version = "1.19", optional = true, default-features = false, features = ["io-util"] }
 
 [dev-dependencies]
 criterion = "0.3"
@@ -23,13 +24,15 @@ pretty_assertions = "1.2"
 regex = "1"
 serde = { version = "1.0", features = ["derive"] }
 serde-value = "0.7"
+# required for async tests
+tokio = { version = "1.19", default-features = false, features = ["macros", "rt-multi-thread"] }
 
 [[bench]]
 name = "bench"
 harness = false
 
 [features]
-default = []
+default = ["async"]
 ## Enables support of non-UTF-8 encoded documents. Encoding will be inferred from
 ## the XML declaration if it will be found, otherwise UTF-8 is assumed.
 ##
@@ -93,6 +96,8 @@ serialize = ["serde"]
 
 ## Enables support for recognizing all [HTML 5 entities](https://dev.w3.org/html5/html-author/charref)
 escape-html = []
+
+async = ["tokio"]
 
 [package.metadata.docs.rs]
 all-features = true

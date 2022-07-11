@@ -1,5 +1,8 @@
 //! A module to handle `Reader`
 
+#[cfg(feature = "async")]
+mod azync;
+
 use std::borrow::Cow;
 use std::io::{self, BufRead, BufReader};
 use std::{fs::File, path::Path, str::from_utf8};
