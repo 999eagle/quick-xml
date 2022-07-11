@@ -30,8 +30,7 @@ let xml = r#"<tag1 att1 = "test">
                 </tag2>
             </tag1>"#;
 
-let mut reader = Reader::from_str(xml);
-reader.trim_text(true);
+let mut reader = Reader::builder().trim_text(true).into_str_reader(xml);
 
 let mut count = 0;
 let mut txt = Vec::new();
@@ -72,8 +71,7 @@ use std::io::Cursor;
 use std::iter;
 
 let xml = r#"<this_tag k1="v1" k2="v2"><child>text</child></this_tag>"#;
-let mut reader = Reader::from_str(xml);
-reader.trim_text(true);
+let mut reader = Reader::builder().trim_text(true).into_str_reader(xml);
 let mut writer = Writer::new(Cursor::new(Vec::new()));
 let mut buf = Vec::new();
 loop {
