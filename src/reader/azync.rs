@@ -20,88 +20,95 @@ pub(super) trait AsyncXmlSource<'buf, B> {
     /// ```
     ///
     /// See also [`XmlSource::read_bytes_until`](super::XmlSource::read_bytes_until).
-    fn read_bytes_until<'_self, 'pos>(
+    fn read_bytes_until<'_self, 'pos, 'func>(
         &'_self mut self,
         byte: u8,
         buf: B,
         position: &'pos mut usize,
-    ) -> Pin<Box<dyn Future<Output = Result<Option<&'buf [u8]>>> + Send + 'buf>>
+    ) -> Pin<Box<dyn Future<Output = Result<Option<&'buf [u8]>>> + Send + 'func>>
     where
-        '_self: 'buf,
-        'pos: 'buf;
+        '_self: 'func,
+        'pos: 'func,
+        'buf: 'func;
 
     /// Equivalent to:
     /// ```ignore
     /// async fn read_bang_element(&mut self, buf: B, position: &mut usize) -> Result<Option<(BangType, &[u8])>>;
     /// ```
-    fn read_bang_element<'_self, 'pos>(
+    fn read_bang_element<'_self, 'pos, 'func>(
         &'_self mut self,
         buf: B,
         position: &'pos mut usize,
-    ) -> Pin<Box<dyn Future<Output = Result<Option<(BangType, &'buf [u8])>>> + Send + 'buf>>
+    ) -> Pin<Box<dyn Future<Output = Result<Option<(BangType, &'buf [u8])>>> + Send + 'func>>
     where
-        '_self: 'buf,
-        'pos: 'buf;
+        '_self: 'func,
+        'pos: 'func,
+        'buf: 'func;
 
     /// Equivalent to:
     /// ```ignore
     /// async fn read_element(&mut self, buf: B, position: &mut usize) -> Result<Option<&[u8]>>;
     /// ```
-    fn read_element<'_self, 'pos>(
+    fn read_element<'_self, 'pos, 'func>(
         &'_self mut self,
         buf: B,
         position: &'pos mut usize,
-    ) -> Pin<Box<dyn Future<Output = Result<Option<&'buf [u8]>>> + Send + 'buf>>
+    ) -> Pin<Box<dyn Future<Output = Result<Option<&'buf [u8]>>> + Send + 'func>>
     where
-        '_self: 'buf,
-        'pos: 'buf;
+        '_self: 'func,
+        'pos: 'func,
+        'buf: 'func;
 
     /// Equivalent to:
     /// ```ignore
     /// async fn skip_whitespace(&mut self, position: &mut usize) -> Result<()>;
     /// ```
-    fn skip_whitespace<'_self, 'pos>(
+    fn skip_whitespace<'_self, 'pos, 'func>(
         &'_self mut self,
         position: &'pos mut usize,
-    ) -> Pin<Box<dyn Future<Output = Result<()>> + Send + 'buf>>
+    ) -> Pin<Box<dyn Future<Output = Result<()>> + Send + 'func>>
     where
-        '_self: 'buf,
-        'pos: 'buf;
+        '_self: 'func,
+        'pos: 'func,
+        'buf: 'func;
 
     /// Equivalent to:
     /// ```ignore
     /// async fn skip_one(&mut self, byte: u8, position: &mut usize) -> Result<bool>;
     /// ```
-    fn skip_one<'_self, 'pos>(
+    fn skip_one<'_self, 'pos, 'func>(
         &'_self mut self,
         byte: u8,
         position: &'pos mut usize,
-    ) -> Pin<Box<dyn Future<Output = Result<bool>> + Send + 'buf>>
+    ) -> Pin<Box<dyn Future<Output = Result<bool>> + Send + 'func>>
     where
-        '_self: 'buf,
-        'pos: 'buf;
+        '_self: 'func,
+        'pos: 'func,
+        'buf: 'func;
 
     /// Equivalent to:
     /// ```ignore
     /// async fn peek_one(&mut self) -> Result<Option<u8>>;
     /// ```
-    fn peek_one<'_self>(
+    fn peek_one<'_self, 'func>(
         &'_self mut self,
-    ) -> Pin<Box<dyn Future<Output = Result<Option<u8>>> + Send + 'buf>>
+    ) -> Pin<Box<dyn Future<Output = Result<Option<u8>>> + Send + 'func>>
     where
-        '_self: 'buf;
+        '_self: 'func,
+        'buf: 'func;
 }
 
 impl<'buf, R: AsyncBufRead + Unpin + Send + 'buf> AsyncXmlSource<'buf, &'buf mut Vec<u8>> for R {
-    fn read_bytes_until<'a, 'b>(
+    fn read_bytes_until<'a, 'b, 'func>(
         &'a mut self,
         byte: u8,
         buf: &'buf mut Vec<u8>,
         position: &'b mut usize,
-    ) -> Pin<Box<dyn Future<Output = Result<Option<&'buf [u8]>>> + Send + 'buf>>
+    ) -> Pin<Box<dyn Future<Output = Result<Option<&'buf [u8]>>> + Send + 'func>>
     where
-        'a: 'buf,
-        'b: 'buf,
+        'a: 'func,
+        'b: 'func,
+        'buf: 'func,
     {
         Box::pin(async move {
             let mut read = 0;
@@ -144,14 +151,15 @@ impl<'buf, R: AsyncBufRead + Unpin + Send + 'buf> AsyncXmlSource<'buf, &'buf mut
         })
     }
 
-    fn read_bang_element<'_self, 'pos>(
+    fn read_bang_element<'_self, 'pos, 'func>(
         &'_self mut self,
         buf: &'buf mut Vec<u8>,
         position: &'pos mut usize,
-    ) -> Pin<Box<dyn Future<Output = Result<Option<(BangType, &'buf [u8])>>> + Send + 'buf>>
+    ) -> Pin<Box<dyn Future<Output = Result<Option<(BangType, &'buf [u8])>>> + Send + 'func>>
     where
-        '_self: 'buf,
-        'pos: 'buf,
+        '_self: 'func,
+        'pos: 'func,
+        'buf: 'func,
     {
         Box::pin(async move {
             // Peeked one bang ('!') before being called, so it's guaranteed to
@@ -201,14 +209,15 @@ impl<'buf, R: AsyncBufRead + Unpin + Send + 'buf> AsyncXmlSource<'buf, &'buf mut
         })
     }
 
-    fn read_element<'_self, 'pos>(
+    fn read_element<'_self, 'pos, 'func>(
         &'_self mut self,
         buf: &'buf mut Vec<u8>,
         position: &'pos mut usize,
-    ) -> Pin<Box<dyn Future<Output = Result<Option<&'buf [u8]>>> + Send + 'buf>>
+    ) -> Pin<Box<dyn Future<Output = Result<Option<&'buf [u8]>>> + Send + 'func>>
     where
-        '_self: 'buf,
-        'pos: 'buf,
+        '_self: 'func,
+        'pos: 'func,
+        'buf: 'func,
     {
         Box::pin(async move {
             let mut state = ReadElementState::Elem;
@@ -251,13 +260,14 @@ impl<'buf, R: AsyncBufRead + Unpin + Send + 'buf> AsyncXmlSource<'buf, &'buf mut
         })
     }
 
-    fn skip_whitespace<'_self, 'pos>(
+    fn skip_whitespace<'_self, 'pos, 'func>(
         &'_self mut self,
         position: &'pos mut usize,
-    ) -> Pin<Box<dyn Future<Output = Result<()>> + Send + 'buf>>
+    ) -> Pin<Box<dyn Future<Output = Result<()>> + Send + 'func>>
     where
-        '_self: 'buf,
-        'pos: 'buf,
+        '_self: 'func,
+        'pos: 'func,
+        'buf: 'func,
     {
         Box::pin(async move {
             loop {
@@ -279,14 +289,15 @@ impl<'buf, R: AsyncBufRead + Unpin + Send + 'buf> AsyncXmlSource<'buf, &'buf mut
         })
     }
 
-    fn skip_one<'_self, 'pos>(
+    fn skip_one<'_self, 'pos, 'func>(
         &'_self mut self,
         byte: u8,
         position: &'pos mut usize,
-    ) -> Pin<Box<dyn Future<Output = Result<bool>> + Send + 'buf>>
+    ) -> Pin<Box<dyn Future<Output = Result<bool>> + Send + 'func>>
     where
-        '_self: 'buf,
-        'pos: 'buf,
+        '_self: 'func,
+        'pos: 'func,
+        'buf: 'func,
     {
         Box::pin(async move {
             match self.peek_one().await? {
@@ -300,11 +311,12 @@ impl<'buf, R: AsyncBufRead + Unpin + Send + 'buf> AsyncXmlSource<'buf, &'buf mut
         })
     }
 
-    fn peek_one<'_self>(
+    fn peek_one<'_self, 'func>(
         &'_self mut self,
-    ) -> Pin<Box<dyn Future<Output = Result<Option<u8>>> + Send + 'buf>>
+    ) -> Pin<Box<dyn Future<Output = Result<Option<u8>>> + Send + 'func>>
     where
-        '_self: 'buf,
+        '_self: 'func,
+        'buf: 'func,
     {
         Box::pin(async move {
             loop {
