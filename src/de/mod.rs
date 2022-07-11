@@ -224,7 +224,7 @@ use crate::{
     events::{BytesCData, BytesEnd, BytesStart, BytesText, Event},
     name::QName,
     reader::Decoder,
-    Reader,
+    DefaultParser, Reader,
 };
 use serde::de::{self, Deserialize, DeserializeOwned, Visitor};
 use std::borrow::Cow;
@@ -697,21 +697,27 @@ where
 impl<'de> Deserializer<'de, SliceReader<'de>> {
     /// Create new deserializer that will borrow data from the specified string
     pub fn from_str(s: &'de str) -> Self {
-        Self::from_borrowing_reader(Reader::from_str(s))
+        let reader = Reader::builder()
+            .expand_empty_elements(true)
+            .check_end_names(true)
+            .trim_text(true)
+            .into_str_reader(s);
+        Self::from_borrowing_reader(reader)
     }
 
     /// Create new deserializer that will borrow data from the specified byte array
     pub fn from_slice(bytes: &'de [u8]) -> Self {
-        Self::from_borrowing_reader(Reader::from_bytes(bytes))
+        let reader = Reader::builder()
+            .expand_empty_elements(true)
+            .check_end_names(true)
+            .trim_text(true)
+            .into_reader(bytes);
+        Self::from_borrowing_reader(reader)
     }
 
     /// Create new deserializer that will borrow data from the specified borrowing reader
     #[inline]
-    fn from_borrowing_reader(mut reader: Reader<&'de [u8]>) -> Self {
-        reader
-            .expand_empty_elements(true)
-            .check_end_names(true)
-            .trim_text(true);
+    fn from_borrowing_reader(reader: Reader<&'de [u8], DefaultParser>) -> Self {
         Self::new(SliceReader { reader })
     }
 }
@@ -725,11 +731,11 @@ where
     /// [`Self::from_str`] or [`Self::from_slice`] instead, because they will
     /// borrow instead of copy, whenever possible
     pub fn from_reader(reader: R) -> Self {
-        let mut reader = Reader::from_reader(reader);
-        reader
+        let reader = Reader::builder()
             .expand_empty_elements(true)
             .check_end_names(true)
-            .trim_text(true);
+            .trim_text(true)
+            .into_reader(reader);
 
         Self::new(IoReader {
             reader,
@@ -942,7 +948,7 @@ pub trait XmlRead<'i> {
 /// You cannot create it, it is created automatically when you call
 /// [`Deserializer::from_reader`]
 pub struct IoReader<R: BufRead> {
-    reader: Reader<R>,
+    reader: Reader<R, DefaultParser>,
     buf: Vec<u8>,
 }
 
@@ -987,7 +993,7 @@ impl<'i, R: BufRead> XmlRead<'i> for IoReader<R> {
 /// You cannot create it, it is created automatically when you call
 /// [`Deserializer::from_str`] or [`Deserializer::from_slice`]
 pub struct SliceReader<'de> {
-    reader: Reader<&'de [u8]>,
+    reader: Reader<&'de [u8], DefaultParser>,
 }
 
 impl<'de> XmlRead<'de> for SliceReader<'de> {
@@ -1389,14 +1395,12 @@ mod tests {
         .as_bytes();
 
         let mut reader = SliceReader {
-            reader: Reader::from_bytes(s),
+            reader: Reader::builder()
+                .trim_text(true)
+                .expand_empty_elements(true)
+                .check_end_names(true)
+                .into_reader(s),
         };
-
-        reader
-            .reader
-            .trim_text(true)
-            .expand_empty_elements(true)
-            .check_end_names(true);
 
         let mut events = Vec::new();
 
@@ -1433,14 +1437,12 @@ mod tests {
     fn borrowing_read_to_end() {
         let s = " <item /> ";
         let mut reader = SliceReader {
-            reader: Reader::from_str(s),
+            reader: Reader::builder()
+                .trim_text(true)
+                .expand_empty_elements(true)
+                .check_end_names(true)
+                .into_str_reader(s),
         };
-
-        reader
-            .reader
-            .trim_text(true)
-            .expand_empty_elements(true)
-            .check_end_names(true);
 
         assert_eq!(
             reader.next().unwrap(),

@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 use std::{fs::File, io::BufReader, path::Path};
 
 #[cfg(feature = "encoding")]
-use encoding_rs::{Encoding, UTF_16BE, UTF_16LE, UTF_8};
+use encoding_rs::UTF_8;
 
 use crate::{Error, Parser, Reader, Result};
 
@@ -160,7 +160,14 @@ impl<P: Parser> ReaderBuilder<P> {
 
     /// Builds a new [`Reader`] from this configuration reading from the given string slice.
     pub fn into_str_reader<'b>(self, str: &'b str) -> Reader<&'b [u8], P> {
-        self.into_reader(str.as_bytes())
+        #[cfg_attr(not(feature = "encoding"), allow(unused_mut))]
+        let mut reader = self.into_reader(str.as_bytes());
+        // Rust strings are guaranteed to be UTF-8, so lock the encoding
+        #[cfg(feature = "encoding")]
+        {
+            reader.parser.set_encoding(EncodingRef::Explicit(UTF_8));
+        }
+        reader
     }
 
     /// Creates an XML reader from a file path.

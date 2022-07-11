@@ -2,7 +2,7 @@ use std::str::from_utf8;
 
 use delegate::delegate;
 #[cfg(feature = "encoding")]
-use encoding_rs::{Encoding, UTF_16BE, UTF_16LE, UTF_8};
+use encoding_rs::UTF_8;
 
 use crate::{
     events::{BytesCData, BytesDecl, BytesEnd, BytesStart, BytesText, Event},

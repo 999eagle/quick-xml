@@ -8,7 +8,7 @@ mod xml_source;
 
 use std::borrow::Cow;
 use std::io::{BufRead, BufReader};
-use std::{fs::File, path::Path, str::from_utf8};
+use std::{fs::File, path::Path};
 
 #[cfg(feature = "encoding")]
 use encoding_rs::{Encoding, UTF_16BE, UTF_16LE, UTF_8};
@@ -1180,16 +1180,7 @@ impl<'a> Reader<&'a [u8], DefaultParser> {
 impl<'a, P: Parser> Reader<&'a [u8], P> {
     /// Creates an XML reader from a string slice and a [`ParserBuilder`] for configuration.
     pub fn from_str_builder(s: &'a str, builder: ParserBuilder<P>) -> Self {
-        #[allow(unused_mut)]
-        let mut reader = ReaderBuilder::from_parser(builder).into_str_reader(s);
-
-        // Rust strings are guaranteed to be UTF-8, so lock the encoding
-        #[cfg(feature = "encoding")]
-        {
-            reader.parser.set_encoding(EncodingRef::Explicit(UTF_8));
-        }
-
-        reader
+        ReaderBuilder::from_parser(builder).into_str_reader(s)
     }
 
     /// Creates an XML reader from a slice of bytes a default parser configuration.
